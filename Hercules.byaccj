@@ -1,0 +1,170 @@
+%{
+	import java.io.*;
+	import java.util.*;
+%}
+
+%token <sval> INT,STRING,CHAR,OP,DOUBLE,NAME,DIGIT,FUN,BODY
+%token IF,ELSE,ELSEIF,WHILE,VAR
+%token RETURN AND,OR,NOT
+%token TRUE,FALSE,NULL
+
+%type <obj> program, function, body, expression
+%type <obj> statement_block, statement, if_statement, while_statement
+
+%%
+
+start	:
+		{ emit("\""+name+".mexe\" = main in\n!{{"); }
+		program
+		
+		{ emit("}}*BASIS;"); }
+	;
+	
+program :	
+		program function					
+	|	function 
+	;
+
+
+function :
+	FUN NAME body  
+	;
+
+body :
+	statement_block
+	;
+
+statement_block :
+	statement;
+
+statement :
+	expression
+	| statement_block 
+	| if_statement 
+	| while_statement 
+	| elif_statement
+	| INT
+	| NAME
+	;
+
+if_statement :
+	IF expression body ELSE body  ;
+
+while_statement :
+	WHILE expression body  ;
+
+elif_statement :
+	ELSEIF expression body ;
+
+expression :
+	expression OP statement
+	| statement
+	;
+
+%%
+
+	static private String name;
+	private HerculesLexer lexer;
+	private int varCount;
+	private HashMap<String,Integer> varTable;
+	private int tmpPos = -1;
+	private int nextLabel = 1;
+	private int argCount = 0;
+	private int argPos = 0;
+	static class Link
+	{
+		int val;
+		Link next;
+		public Link( int n, Link l )
+		{
+			val = n;
+			next = l;
+		}
+	}
+	Link stack = null;
+
+	private int pushTemp()
+	{
+		return tmpPos--;
+	}
+
+	private void popTemp()
+	{
+		tmpPos++;
+	}
+
+	private int newLabel()
+	{
+		return nextLabel++;
+	}
+
+	private void push( int n )
+	{
+		stack = new Link(n,stack);
+	}
+
+	private int pop()
+	{
+		int res = stack.val;
+		stack = stack.next;
+		return res;
+	}
+
+	private void addVar( String name )
+	{
+		if( varTable.get(name) != null )
+			yyerror("Variable already exists");
+		varTable.put(name,varCount++);
+	}
+
+	private int findVar( String name )
+	{
+		Integer res = varTable.get(name);
+		if( res == null )
+			yyerror("Variable does not exist");
+		return res;
+	}
+
+	private int yylex()  
+	{
+		int yyl_return = -1;
+		try
+		{
+			yylval = null;
+			yyl_return = lexer.yylex();
+			if( yylval==null )
+				yylval = new HerculesParserVal(HerculesParser.yyname[yyl_return]);
+			//System.out.println("Token: "+HerculesParser.yyname[yyl_return]+" Lexeme: "+yylval.sval);
+		}
+		catch (IOException e)
+		{
+			System.err.println("IO error: "+e);
+		}
+		return yyl_return;
+	}
+
+	public void yyerror( String error )  
+	{
+		System.err.println("Error:  "+error);
+		System.err.println("Line:   "+lexer.getLine());
+		System.err.println("Column: "+lexer.getColumn());
+		System.exit(1);
+	}
+
+	public HerculesParser( Reader r )  
+	{
+		lexer = new HerculesLexer(r,this);
+	}
+
+	public static void main( String args[] ) throws IOException   
+	{
+		System.out.println("Hercules");
+		HerculesParser yyHerculesparser = new HerculesParser(new FileReader(args[0]));
+		name = args[0].substring(0,args[0].lastIndexOf('.'));
+		yyHerculesparser.yyparse();
+	}
+
+	public void emit( String s )
+	{
+		System.out.println(s);
+	}

@@ -100,29 +100,29 @@ WHITESPACE = [\n\r\ \t\b\012]
 
 {STRING} {
 	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.STRING;
+	return HerculesParser.LITERAL;
 }
 
 {CHAR} {
 	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.CHAR;
+	return HerculesParser.LITERAL;
 }
 
 {INT} {
 	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.INT;
+	return HerculesParser.LITERAL;
 }
 
 "null" {
-	return HerculesParser.NULL;
+	return HerculesParser.LITERAL;
 }
 
 "true" {
-	return HerculesParser.TRUE;
+	return HerculesParser.LITERAL;
 }
 
 "false" {
-	return HerculesParser.FALSE;
+	return HerculesParser.LITERAL;
 }
 
 "if" {
@@ -151,10 +151,6 @@ WHITESPACE = [\n\r\ \t\b\012]
 
 "fun" {
 	return HerculesParser.FUN;
-}
-
-"body" {
-	return HerculesParser.BODY;
 }
 
 {NAME} {

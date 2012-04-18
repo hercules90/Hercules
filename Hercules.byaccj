@@ -3,10 +3,9 @@
 	import java.util.*;
 %}
 
-%token <sval> INT,STRING,CHAR,OP,DOUBLE,NAME,DIGIT,FUN,BODY
+%token <sval> OP,DOUBLE,NAME,DIGIT,FUN,LITERAL
 %token IF,ELSE,ELSEIF,WHILE,VAR
-%token RETURN AND,OR,NOT
-%token TRUE,FALSE,NULL
+%token RETURN,AND,OR,NOT
 
 %%
 
@@ -87,7 +86,7 @@ small_expr
 	:	NAME {emit("(Fetch " + findVar($1) + ")");}
     |	NAME '(' { push(argCount); argCount = 0;tmpPos--;  }  args ')'{ tmpPos++; emit("(Call #\"" + $1 + "[f" + argCount + "]\" " + tmpPos + ")"); argCount = pop(); } 
 	|	OP small_expr	/* einundaraðgerð */
-	|	NAME {emit("(MakeVal " + $1 + ")");}	 	
+	|	LITERAL {emit("(MakeVal " + $1 + ")");}	 	
 	| 	'(' expr ')'
 	|	IF expr {push(elseLab);push(endifLab); elseLab = newLabel(); endifLab = newLabel(); emit("(GoFalse _" + elseLab + ")");}
  		body {emit("(Go _" + endifLab + ")" );} ifrest {emit("_" + endifLab +":"); endifLab = pop(); elseLab = pop(); } 

@@ -1,4 +1,0 @@
-main()
-{
-	writeln('Hello world');
-}

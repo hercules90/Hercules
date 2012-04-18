@@ -8,58 +8,113 @@
 %token RETURN AND,OR,NOT
 %token TRUE,FALSE,NULL
 
-%type <obj> program, function, body, expression
-%type <obj> statement_block, statement, if_statement, while_statement
-
 %%
 
-start	:
-		{ emit("\""+name+".mexe\" = main in\n!{{"); }
+start
+	:	{ emit("\""+name+".mexe\" = main in\n!{{"); }
 		program
-		
 		{ emit("}}*BASIS;"); }
 	;
-	
-program :	
-		program function					
-	|	function 
+
+program
+	:	program function
+	|	function
+	;
+
+names 	
+	:	non_empty_names
+	|
+	;		
+
+non_empty_names
+	:	NAME {addVar($1);}
+	|	NAME {addVar($1);} ',' non_empty_names
+	;
+
+function 
+	: 	NAME '(' {varCount = 0;varTable=new HashMap<String,Integer>();} 
+	names ')' {emit("#\"" + $1 + "[f" + varCount + "]\" = "); 
+	emit("["); }
+	'{'
+		decls 
+		exprs 
+	'}'
+	{emit("(Return)"); emit("];");}
+	;
+
+decls 
+	:	decl decls 
+	| 
+	;
+
+decl
+	:	VAR non_empty_names ';' 
+	;
+
+exprs
+	:	expr ';'  exprs 
+	|	expr ';'
+	;
+
+expr 
+	:	NAME '=' expr {emit("(Store " + findVar($1) + ")");} 
+	|	RETURN expr
+	|	or_expr
+	;
+
+or_expr 
+	:	or_expr OR and_expr 
+	|	and_expr
+	;
+
+and_expr 
+	:	and_expr AND not_expr
+	|	not_expr
+	;
+
+not_expr 
+	:	NOT not_expr 
+	|	op_expr
+	; 
+
+/*(Call #"+[f2]" - tmpPos);	Muna að incrementa og decrementa tmpPos*/
+op_expr 
+	:	op_expr OP {} small_expr {}
+	|	small_expr
+	;
+
+small_expr 
+	:	NAME {emit("(Fetch " + findVar($1) + ")");}
+    |	NAME '(' { push(argCount); argCount = 0;tmpPos--;  }  args ')'{ tmpPos++; emit("(Call #\"" + $1 + "[f" + argCount + "]\" " + tmpPos + ")"); argCount = pop(); } 
+	|	OP small_expr	/* einundaraðgerð */
+	|	NAME {emit("(MakeVal " + $1 + ")");}	 	
+	| 	'(' expr ')'
+	|	IF expr {push(elseLab);push(endifLab); elseLab = newLabel(); endifLab = newLabel(); emit("(GoFalse _" + elseLab + ")");}
+ 		body {emit("(Go _" + endifLab + ")" );} ifrest {emit("_" + endifLab +":"); endifLab = pop(); elseLab = pop(); } 
+	|	WHILE expr body
+ 	;
+
+body 
+	: '{' exprs  '}' ;
+
+
+ifrest 
+	: ELSEIF {emit("_" + elseLab + ":" );} expr {elseLab = newLabel(); emit("(GoFalse _" + elseLab + ")");} body {emit("(Go _" + endifLab + ")" );} ifrest 
+	| ELSE {emit("_" + elseLab + ":" );} body  
+	| {emit("_" + elseLab + ":" );}
 	;
 
 
-function :
-	FUN NAME body  
+
+args : non_empty_args 
+	|  
 	;
 
-body :
-	statement_block
+non_empty_args : arg ',' non_empty_args | arg ;
+
+arg : expr {emit("(StoreArgAcc " + (tmpPos+1) + " " + argCount + ")"); argCount++; }
 	;
 
-statement_block :
-	statement;
-
-statement :
-	expression
-	| statement_block 
-	| if_statement 
-	| while_statement 
-	| elif_statement
-	| INT
-	| NAME
-	;
-
-if_statement :
-	IF expression body ELSE body  ;
-
-while_statement :
-	WHILE expression body  ;
-
-elif_statement :
-	ELSEIF expression body ;
-
-expression :
-	expression OP statement
-	| statement
-	;
 
 %%
 
@@ -71,6 +126,9 @@ expression :
 	private int nextLabel = 1;
 	private int argCount = 0;
 	private int argPos = 0;
+	private int elseLab = 0;
+	private int endifLab = 0;
+	
 	static class Link
 	{
 		int val;
@@ -125,7 +183,7 @@ expression :
 		return res;
 	}
 
-	private int yylex()  
+	private int yylex()
 	{
 		int yyl_return = -1;
 		try
@@ -143,7 +201,7 @@ expression :
 		return yyl_return;
 	}
 
-	public void yyerror( String error )  
+	public void yyerror( String error )
 	{
 		System.err.println("Error:  "+error);
 		System.err.println("Line:   "+lexer.getLine());
@@ -151,17 +209,17 @@ expression :
 		System.exit(1);
 	}
 
-	public HerculesParser( Reader r )  
+	public HerculesParser( Reader r )
 	{
 		lexer = new HerculesLexer(r,this);
 	}
 
-	public static void main( String args[] ) throws IOException   
+	public static void main( String args[] )
+	  	throws IOException
 	{
-		System.out.println("Hercules");
-		HerculesParser yyHerculesparser = new HerculesParser(new FileReader(args[0]));
+		HerculesParser yyparser = new HerculesParser(new FileReader(args[0]));
 		name = args[0].substring(0,args[0].lastIndexOf('.'));
-		yyHerculesparser.yyparse();
+		yyparser.yyparse();
 	}
 
 	public void emit( String s )

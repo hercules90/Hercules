@@ -6,6 +6,8 @@
 %token <sval> OP,DOUBLE,NAME,DIGIT,FUN,LITERAL
 %token IF,ELSE,ELSEIF,WHILE,VAR
 %token RETURN,AND,OR,NOT
+%token EQUALS
+%token BINOP7,BINOP6,BINOP5,BINOP4,BINOP3,BINOP2,BINOP1
 
 %%
 
@@ -25,11 +27,6 @@ names
 	|
 	;		
 
-non_empty_names
-	:	NAME {addVar($1);}
-	|	NAME {addVar($1);} ',' non_empty_names
-	;
-
 function 
 	: 	NAME '(' {varCount = 0;varTable=new HashMap<String,Integer>();} 
 	names ')' {emit("#\"" + $1 + "[f" + varCount + "]\" = "); 
@@ -41,24 +38,38 @@ function
 	{emit("(Return)"); emit("];");}
 	;
 
+non_empty_names
+	:	NAME {addVar($1);}
+	|	NAME {addVar($1);} ',' non_empty_names
+	;
+
 decls 
 	:	decl decls 
 	| 
 	;
 
 decl
-	:	VAR non_empty_names ';' 
+	:	VAR non_empty_names ';'
 	;
 
 exprs
 	:	expr ';'  exprs 
 	|	expr ';'
 	;
-
-expr 
+	
+expr
 	:	NAME '=' expr {emit("(Store " + findVar($1) + ")");} 
-	|	RETURN expr
+	|	expr BINOP1 expr
+	|	expr BINOP2 expr
+	|	expr BINOP3 expr
+	|	expr BINOP4 expr
+	|	expr BINOP5 expr
+	|	expr BINOP6 expr
+	|	expr BINOP7 expr
+	|	expr BINAND expr
 	|	or_expr
+	|	smallexpr
+	|	RETURN expr
 	;
 
 or_expr 
@@ -82,16 +93,26 @@ op_expr
 	|	small_expr
 	;
 
-small_expr 
-	:	NAME {emit("(Fetch " + findVar($1) + ")");}
-    |	NAME '(' { push(argCount); argCount = 0;tmpPos--;  }  args ')'{ tmpPos++; emit("(Call #\"" + $1 + "[f" + argCount + "]\" " + tmpPos + ")"); argCount = pop(); } 
-	|	OP small_expr	/* einundaraðgerð */
-	|	LITERAL {emit("(MakeVal " + $1 + ")");}	 	
-	| 	'(' expr ')'
-	|	IF expr {push(elseLab);push(endifLab); elseLab = newLabel(); endifLab = newLabel(); emit("(GoFalse _" + elseLab + ")");}
- 		body {emit("(Go _" + endifLab + ")" );} ifrest {emit("_" + endifLab +":"); endifLab = pop(); elseLab = pop(); } 
+small_expr
+	:	op smallexpr /* einundaraðgerð */
 	|	WHILE expr body
- 	;
+	|	IF expr {push(elseLab);push(endifLab); elseLab = newLabel(); endifLab = newLabel(); emit("(GoFalse _" + elseLab + ")");}
+ 		body {emit("(Go _" + endifLab + ")" );} ifrest {emit("_" + endifLab +":"); endifLab = pop(); elseLab = pop(); }
+	|	LITERAL {emit("(MakeVal " + $1 + ")");}	
+	|	NAME {emit("(Fetch " + findVar($1) + ")");}
+	|	NAME '(' { push(argCount); argCount = 0;tmpPos--;  }  args ')'{ tmpPos++; emit("(Call #\"" + $1 + "[f" + argCount + "]\" " + tmpPos + ")"); argCount = pop(); } 
+	|	'(' expr ')'
+	;
+
+op
+	: BINOP1
+	| BINOP2
+	| BINOP3
+	| BINOP4
+	| BINOP5
+	| BINOP6
+	| BINOP7
+	;
 
 body 
 	: '{' exprs  '}' ;
@@ -102,8 +123,6 @@ ifrest
 	| ELSE {emit("_" + elseLab + ":" );} body  
 	| {emit("_" + elseLab + ":" );}
 	;
-
-
 
 args : non_empty_args 
 	|  

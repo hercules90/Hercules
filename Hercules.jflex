@@ -43,7 +43,16 @@ DIGIT =		[0-9]
 FLOAT =		{DIGIT}+\.{DIGIT}+([eE][+-]?{DIGIT}+)?
 INT = 		{DIGIT}+
 OPCHAR =	[\+\-*/!%&=><\:\^\~&|?]
-OP = 		{OPCHAR}+
+/* OP = 		{OPCHAR}+ */
+
+BINOP7  =  [*/%]{OPCHAR}*
+BINOP6  =  [+-]{OPCHAR}*
+BINOP5  =  [<>!=]{OPCHAR}*
+BINOP4  =  &{OPCHAR}*
+BINOP3  =  \|{OPCHAR}*
+BINOP2  =  :{OPCHAR}*
+BINOP1  =  [~\^\?]{OPCHAR}*
+
 DELIM =		[()\[\]{},;.$#\!=]
 ALPHA =		[:letter:]
 NAME = 		(_|{ALPHA})(_|{ALPHA}|{DIGIT})*
@@ -59,6 +68,10 @@ WHITESPACE = [\n\r\ \t\b\012]
 {FLOAT} {
 	yyHerculesParser.yylval = new HerculesParserVal(yytext());
 	return HerculesParser.DOUBLE;
+}
+
+"==" {
+	return HerculesParser.EQUALS;
 }
 
 "||" {
@@ -78,24 +91,39 @@ WHITESPACE = [\n\r\ \t\b\012]
 	return yycharat(0);
 }
 
-{OP} {
+{BINOP7} {
 	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	switch( yycharat(0) )
-	{
-		case '?':
-		case '~':
-		case '^':
-		case ':':
-		case '|':
-		case '&':
-		case '=':
-		case '<':
-		case '>':
-		case '!':
-		case '+':
-		case '-':
-		default:
-	}
+	return HerculesParser.BINOP7;
+}
+
+{BINOP6} {
+	yyHerculesParser.yylval = new HerculesParserVal(yytext());
+	return HerculesParser.BINOP6;
+}
+
+{BINOP5} {
+	yyHerculesParser.yylval = new HerculesParserVal(yytext());
+	return HerculesParser.BINOP5;
+}
+
+{BINOP4} {
+	yyHerculesParser.yylval = new HerculesParserVal(yytext());
+	return HerculesParser.BINOP4;
+}
+
+{BINOP3} {
+	yyHerculesParser.yylval = new HerculesParserVal(yytext());
+	return HerculesParser.BINOP3;
+}
+
+{BINOP2} {
+	yyHerculesParser.yylval = new HerculesParserVal(yytext());
+	return HerculesParser.BINOP2;
+}
+
+{BINOP1} {
+	yyHerculesParser.yylval = new HerculesParserVal(yytext());
+	return HerculesParser.BINOP1;
 }
 
 {STRING} {

@@ -1,0 +1,10 @@
+main() 
+{
+var k,l;
+k=3;
+l=2;
+if(k==3)
+{
+	return k;
+};
+}

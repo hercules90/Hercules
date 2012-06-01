@@ -2,8 +2,8 @@ all: HerculesLexer.class HerculesParser.class HerculesParserVal.class
 
 test: all test.test
 	java HerculesParser test.test > test.masm
-	morpho -c test.masm
-	morpho test
+	java -jar morpho.jar -c test.masm
+	java -jar morpho.jar test
 
 HerculesLexer.class HerculesParser.class HerculesParserVal.class: HerculesLexer.java HerculesParser.java HerculesParserVal.java
 	javac HerculesLexer.java HerculesParser.java HerculesParserVal.java

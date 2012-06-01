@@ -25,7 +25,7 @@
 	\end{rep}
 	\end{stack}
 }
-\newenvironment{málrit}[1]{%
+\newenvironment{malrit}[1]{%
 	\par\noindent\begin{minipage}{\linewidth}\vspace{0.5em}\begin{quote}\noindent%
 	\hspace*{-2em}\synt{#1}:\hfill\par%
 	\noindent%
@@ -51,262 +51,231 @@ Hercules er einföld útgáfa af forritunarmálinu Morpho.
 \tableofcontents
 
 \section{Inngangur}
-Hercules er forritunarmál sem þróað var í áfanganum Þýðendur í Háskóla Íslands vorið 2010.
+Hercules er forritunarmál sem þróað var í áfanganum Þýðendur í Háskóla Íslands vorið 2012.
 Það byggir á málinu Morpho (http://morpho.cs.hi.is) eftir Snorra Agnarsson.
 
-Mofo er mjög frumstætt og takmarkað þegar að útfærslumöguleikum kemur, en tenging þess við Morpho
+Hercules er mjög frumstætt og takmarkað þegar að útfærslumöguleikum kemur, en tenging þess við Morpho
 eykur notagildi þess til muna.
 \section{Notkun og uppsetning}
-\section{Málfræði}
-\subsection{Frumeiningar málsins}
-\subsubsection{Athugasemdir}
-\subsubsection{Lykilorð}
-\subsection{Mállýsing}
-\section{Merking málsins}
-\subsection{Einingar og einingaraðgerðir}
-\subsection{Gildi}
-\subsection{Breytur}
-\subsection{Merking segða}
-\subsubsection{Heiltölusegð}
-\subsubsection{Fleytitölusegð}
-\subsubsection{Stafsegð}
-\subsubsection{Strengsegð}
-\subsubsection{Listasegð}
-\subsubsection{return-segð}
-\subsubsection{Röksegðir}
-\subsubsection{Kallsegð}
-\subsubsection{Tvíundaraðgerðir}
-\subsubsection{Einundaraðgerðir}
-\subsubsection{if-segð}
-\subsubsection{while-segð}
-\section{Til hliðsjónar ... hendið þessu eftir notkun}
+Grunnkóða þýðandans má nálgast á URL og með honum fylgja Bash skriftur fyrir
+þýðanda og keyrsluumhverfi. Í zip skránni er einnig að finna umhverfi fyrir Morpho, svo notandi þarf einungis Java
+til að keyra Hercules forrit. Java þarf að vera aðgengilegt í {\tt PATH} í skelinni.
 
-\subsection{Mállýsing með syntax pakkanum í LaTeX}
+Hercules notar Flex lesgreini og Byaccj þáttara og er þýðandinn skrifaður í Java. Til að þýða hann á Linux/Mac eða Cygwin skel er hægt að nota {\tt make} skipunina.
+\pagebreak
 
-Hér er eilítil mállýsing sniðsett með hjálp {\tt syntax} pakkans sem
-nota má í \LaTeX. Þið getið notað þessa aðferð, ef það hentar ykkur,
-til að skilgeina ykkar forritunarmál.
+\subsection{Málfræði}
+\subsubsection{Grunneiningar}
+\synt{string}, \synt{char}, \synt{int}, \synt{double} og \synt{opname} eru eins og í Morpho.
 
-\begin{grammar}
-<x> ::= <x> <y>
-	\alt <y> `x'
-\end{grammar}
-
-\subsection{Ýmis málrit með hjálp syntax pakkans í LaTeX}
-
-Hér eru nokkur málrit skilgreind með hjálp {\tt syntax} pakkans.
-Breytið þessu eftir þörfum, eða notið aðrar
-aðferðir ef það hentar ykkur betur.
-
-Finna má upplýsingar um {\tt syntax} pakkann
-\htmladdnormallinkfoot{á vefnum}{http://www.tug.org/texlive/Contents/live/texmf-dist/doc/latex/mdwtools/syntax.pdf}.
-
-Takið eftir að ráðlegt er að gera einhverjar breytingar hér,
-þó ekki væri til annars en að gera textalýsingar á merkingu
-einfaldari með tilliti til forgangs ýmissa málfyrirbæra.
-
-\begin{málrit}{id_list}
-	\begin{stack}
+%% name
+\begin{malrit}{name}
+	\begin{rep}[b]
 		'a-zA-Z'
 		\\'a-zA-Z0-9_'
-		\begin{rep} <id> \\ `,' \end{rep}
+	\end{rep}
+\end{malrit}
+
+%% literal
+\begin{malrit}{literal}
+	\begin{stack}
+		<float>
+		\\<string>
+		\\<char>
+		\\<int>
+		\\{\tt null}
+		\\{\tt true}
+		\\{\tt false}
 	\end{stack}
-\end{málrit}%
+\end{malrit}
+
+%% op
+\begin{malrit}{op}
+	\begin{stack}
+		{<BINOP7>}
+		\\{<BINOP6>}
+		\\{<BINOP5>}
+		\\{<BINOP4>}
+		\\{<BINOP3>}
+		\\{<BINOP2>}
+		\\{<BINOP1>}
+	\end{stack}
+\end{malrit}
 
 \subsubsection{Forrit}
+%% program
+\begin{malrit}{program}
+	\begin{stack}[b]
+		<program> <function>
+		\\<function>
+	\end{stack}
+\end{malrit}
 
-\begin{málrit}{program}
-	\begin{rep}
-		<function>
-	\end{rep}
-\end{málrit}
-
-\subsubsection{Föll}
-
-\begin{málrit}{function}
-	<id> `(' <id_list> `)' <body>
-\end{málrit}
-
-\subsubsection{Stofnar}
-\begin{málrit}{body}
-	`{' 
-	<decls>
-	\begin{repnull} <expr> `;' \end{repnull}
-	`}' 
-\end{málrit}
-
-\subsubsection{Skilgreiningar}
-\begin{málrit}{decls}
-	\begin{repnull}
-		\begin{stack}
-			`var' \begin{rep} <id> \\ `,' \end{rep} `;'
+%% function
+\begin{malrit}{function}
+	<name> {\tt (}
+	\begin{stack}
 		\\
-			`val' \begin{rep} <id> `=' <expr> \\ `,' \end{rep} `;'
+		\begin{rep}
+			<names>
+			\\{\tt ,}
+		\end{rep}
+	\end{stack}
+	{\tt )\{} <decls><exprs> \}
+\end{malrit}
+
+%% body
+\begin{malrit}{names}
+	\begin{stack}[b]
+		<non_empty_names>
+		\\
+	\end{stack}
+\end{malrit}
+
+%% non_empty_names
+\begin{malrit}{non_empty_names}
+	\begin{stack}[b]
+		<name> {\tt ','} <non_empty_names>
+		\\ <name>
+	\end{stack}
+\end{malrit}
+
+%% decls
+\begin{malrit}{decls}
+	\begin{stack}[b]
+		<var> <non_empty_names> {\tt ;} <decls>
+		\\
+	\end{stack}
+\end{malrit}
+
+%% exprs
+\begin{malrit}{exprs}
+	\begin{stack}[b]
+		<expr> {\tt ;} <exprs>
+		\\
 		\end{stack}
-	\end{repnull}
-\end{málrit}
+\end{malrit}
 
-\subsubsection{Segðir}
-
-\begin{málrit}{expr}
-	\begin{rep}
-		<small_expr>
-	\\
-		\begin{stack}
-			<op>
-		\\
-			`&&'
-		\\
-			`||'
-		\end{stack}
-	\end{rep}
-\end{málrit}
-
-\begin{málrit}{small_expr}
+%% expr
+\begin{malrit}{expr}
 	\begin{stack}
-		<op> <small_expr>
-	\\
-		`(' expr `)'
-	\\
-		<id>
-	\\
-		<id> `=' <expr>
-	\\
-		<id> `('
-		\begin{repnull}
-			<expr>
-		\\
-			`,'
-		\end{repnull}
-		`)'
-	\\
-		`while' expr <body>
-	\\
-		`return' <expr>
-	\\
-		`if' expr <body> <if_rest>
-	\\
-		`['
-		\begin{repnull}
-			<expr>
-		\\
-			`,'
-		\end{repnull}
-		`]'
-	\\
-		<int>
-	\\
-		<float>
-	\\
-		<string>
-	\\
-		<char>
-	\\
-		`true'
-	\\
-		`false'
-	\\
-		`null'
+		{\tt not} <expr>
+		\\<expr> <BINOP1> <expr>
+		\\<expr> <BINOP2> <expr>	
+		\\<expr> <BINOP3> <expr>
+		\\<expr> <BINOP4> <expr>
+		\\<expr> <BINOP5> <expr>	
+		\\<expr> <BINOP6> <expr>
+		\\<expr> <BINOP7> <expr>
+		\\<expr> {\tt and} <expr>
+		\\<expr> {\tt or} <expr>
+		\\<smallexpr>
+		\\ <name> {\tt =} {expr}
+		\\ {\tt return} <expr>
 	\end{stack}
-\end{málrit}
+\end{malrit}
 
-\begin{málrit}{if_rest}
-	\begin{repnull}
-		`elsif' <expr> <body>
-	\end{repnull}
+%% smallexpr
+\begin{malrit}{smallexpr}
 	\begin{stack}
-	\\
-		`else' <body>
+		<op> <smallexpr>
+		\\{\tt while} <expr> <body>
+		\\{\tt if} <expr> <body> <ifrest>
+		\\<literal>
+		\\<name>
+		\\<name> ' ( ' <args> ' ) '
+		\\' ( ' <expr> ' ) '
 	\end{stack}
-\end{málrit}
+\end{malrit}
 
-\subsubsection{Annar möguleiki}
+%% body
+\begin{malrit}{body}
+	'\{' <exprs> '\}'
+\end{malrit}
 
-\begin{málrit}{expr}
+%% ifrest
+\begin{malrit}{ifrest}
 	\begin{stack}
-		`return' <expr>
-	\\
-		<id> `=' <expr>
-	\\
-		<or_expr>
+		{\tt elseif} <expr> <body> <ifrest>
+		\\{\tt else} <body>
 	\end{stack}
-\end{málrit}
+\end{malrit}
 
-\begin{málrit}{or_expr}
-	\begin{rep}
-		<and_expr>
-	\\
-		`||'
-	\end{rep}
-\end{málrit}
+%% args
+\begin{malrit}{args}
+	<non_empty_args>
+\end{malrit}
 
-\begin{málrit}{and_expr}
-	\begin{rep}
-		<not_expr>
-	\\
-		`&&'
-	\end{rep}
-\end{málrit}
-
-\begin{málrit}{not_expr}
-	\begin{repnull}
-		`!'
-	\end{repnull}
-	<binop_expr>
-\end{málrit}
-
-\begin{málrit}{binop_expr}
-	\begin{rep}
-		<small_expr>
-	\\
-		<op>
-	\end{rep}
-\end{málrit}
-
-\begin{málrit}{small_expr}
+%% non_empty_args
+\begin{malrit}{non_empty_args}
 	\begin{stack}
-		<op> <small_expr>
-	\\
-		`(' expr `)'
-	\\
-		<id>
-		\begin{stack}
-		\\
-		`('
-		\begin{repnull}
-			<expr>
-		\\
-			`,'
-		\end{repnull}
-		`)'
-		\end{stack}
-	\\
-		`while' expr  <body>
-	\\
-		`if' expr <body> <if_rest>
-	\\
-		`['
-		\begin{repnull}
-			<expr>
-		\\
-			`,'
-		\end{repnull}
-		`]'
-	\\
-		<int>
-	\\
-		<float>
-	\\
-		<string>
-	\\
-		<char>
-	\\
-		`true'
-	\\
-		`false'
-	\\
-		`null'
+		<arg> ' , ' <non_empty_args>
+		\\<arg>
 	\end{stack}
-\end{málrit}
+\end{malrit}
+
+%% arg
+\begin{malrit}{arg}
+	<expr>
+\end{malrit}
+
+\pagebreak
+
+\section{Merking málsins}
+\subsection{Einingar og einingaraðgerðir}
+Hver Hercules kóðaskrá samsvarar einni einingu í Morpho. Engin útfærsla er á tengingu við aðrar einingar aðrar en BASIS í Morpho, sem er sjálfgefin.
+Hercules skrár eru þó þýddar yfir í Morpho og hægt er að nota þær einingar sem úr Hercules koma í Morpho, þó notagildið sé takmarkað þar sem allar
+einingarnar eru tengdar við BASIS.
+
+Hercules kóðaskrá sem inniheldur {\tt main} fall er þýdd yfir í keyrsluhæfa Morpho skrá ({\tt .mexe}).
+
+\subsection{Gildi}
+Öll gildi í Hercules (heiltölur, fleytitölur, strengir, stafsegðir, {\tt true}, {\tt false} og {\tt null} varpast yfir í samsvarandi gildi í Morpho.
+
+\subsubsection{Sanngildi}
+Segðir sem lesa sanngildi úr reiknisegð lesa {\tt false}, {\tt null} og tölugildið 0 sem ósatt, allt annað er satt.
+
+\subsection{Breytur}
+Ekki þarf að skilgreina breytur sérstaklega áður en þeim er gefið gildi. Engin tögun er heldur í Hercules, svo sama breyta getur innihaldið gildi af
+mismunandi tagi á mismunandi tíma.
+
+\subsection{Merking segða}
+Heiltölur, fleytitölur, strengir, stafsegðir, {\tt true}, {\tt false} og {\tt null} virka eins og í Morpho.
+
+\subsubsection{Reiknisegðir}
+Reiknisegðir eru þær segðir sem skila gildi í Hercules. Þær innihalda breytur, gildi, röksegðir, kallsegðir og tvíundarsegðir. Þegar allir liðir reiknisegðar
+hafa verið framkvæmdir fæst gildi hennar. Það gildi má nota við gildisveitingu breyta, sem viðfang í kallsegð
+eða sem viðfang í {\tt if} og {\tt while} segðir.
+
+\subsubsection{Listasegð}
+Engin listasegð er útfærð í Hercules.
+
+\subsubsection{return-segð}
+Hægt er að nota lykilorðið {\tt return} til að ljúka keyrslu falls áður en stofni þess er lokið. Bæði getur það staðið eitt og sér, en einnig getur
+reiknisegð fylgt því í sömu línu, og þá lýkur keyrslu fallsins með þeirri segð.
+
+\subsubsection{Röksegðir}
+Röksegðir í Hercules skila annað hvort {\tt true} eða {\tt false} gildum. Tvíundaraðgerðirnar {\tt and} og {\tt or} eru útfærðar þar sem {\tt and} hefur hærri forgang,
+og eru þær báðar vinstri tengdar. Prefix einundaraðgerðin {\tt not} er einnig útfærð, og hefur hún hæstan forgang.
+
+Ef vinstri hlið {\tt or} segðar hefur sanngildið {\tt true} er hægri hlið hennar ekki keyrð. Á sama hátt er hægri hlið {\tt and} segðar ekki keyrð ef sanngildi
+vinstri segðar hennar er {\tt false}.
+
+\subsubsection{Tvíundaraðgerðir}
+Tvíundaraðgerðir Hercules eru eins og tvíundaraðgerðir Morpho. Munurinn liggur helst í röksegðunum {\tt and} og {\tt or}, sem eru jafngildar {\tt \&\&} og {\tt ||}.
+
+Tenging og forgangur er eins og í Morpho.
+
+\subsubsection{Einundaraðgerðir}
+Aðeins ein einundarsegð er útfærð í Hercules: {\tt not}. Henni er lýst í hlutanum um röksegðir hér að ofan.
+
+\subsubsection{if-, elseif-, else- segðir}
+Í Hercules má nota if-segðir til að stýra keyrslu forrits. Þær hefjast á forminu {\tt if (x)} þar sem {\tt x} er reiknisegð. Ef gildi hennar hefur sanngildið {\tt true} er stofn
+segðarinnar keyrður.
+
+Ef sanngildið er {\tt false} er stofninum sleppt, en möguleiki er á else- eða elseif- hluta þar á eftir. Hann getur einnig haft reiknisegð, og er þá á forminu {\tt elseif (x)} þar sem {\tt x} er reiknigsegð eða einfaldlega {\tt else} sem er keyrt ef ekki er uppfyllt skilyrði {\tt if} og {\tt elseif} segðanna.
+
+\subsubsection{while-segð}
+Hercules hefur while-segðir, og virka þær eins og í Morpho. Þær eru á sniðinu {\tt while (x)} þar sem {\tt x} er reiknisegð sem framkvæmd í hvert sinn sem {\tt x} uppfyllir þau skilyrði sem reiknisegðin segir til um.
 
 \end{document}

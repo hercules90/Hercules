@@ -43,15 +43,7 @@ DIGIT =		[0-9]
 FLOAT =		{DIGIT}+\.{DIGIT}+([eE][+-]?{DIGIT}+)?
 INT = 		{DIGIT}+
 OPCHAR =	[\+\-*/!%&=><\:\^\~&|?]
-/* OP = 		{OPCHAR}+ */
-
-BINOP7  =  [*/%]{OPCHAR}*
-BINOP6  =  [+-]{OPCHAR}*
-BINOP5  =  [<>!=]{OPCHAR}*
-BINOP4  =  &{OPCHAR}*
-BINOP3  =  \|{OPCHAR}*
-BINOP2  =  :{OPCHAR}*
-BINOP1  =  [~\^\?]{OPCHAR}*
+OP = 		{OPCHAR}+
 
 DELIM =		[()\[\]{},;.$#\!=]
 ALPHA =		[:letter:]
@@ -67,11 +59,7 @@ WHITESPACE = [\n\r\ \t\b\012]
 
 {FLOAT} {
 	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.DOUBLE;
-}
-
-"==" {
-	return HerculesParser.EQUALS;
+	return HerculesParser.LITERAL;
 }
 
 "||" {
@@ -91,39 +79,33 @@ WHITESPACE = [\n\r\ \t\b\012]
 	return yycharat(0);
 }
 
-{BINOP7} {
-	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.BINOP7;
-}
 
-{BINOP6} {
-	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.BINOP6;
-}
 
-{BINOP5} {
+{OP} {
 	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.BINOP5;
-}
-
-{BINOP4} {
-	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.BINOP4;
-}
-
-{BINOP3} {
-	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.BINOP3;
-}
-
-{BINOP2} {
-	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.BINOP2;
-}
-
-{BINOP1} {
-	yyHerculesParser.yylval = new HerculesParserVal(yytext());
-	return HerculesParser.BINOP1;
+	switch ( yycharat(0) )
+	{
+		case '?':
+		case '~':
+		case '^':
+			return HerculesParser.BINOP1;
+		case ':':
+			return HerculesParser.BINOP2;
+		case '|':
+			return HerculesParser.BINOP3;
+		case '&':
+			return HerculesParser.BINOP4;
+		case '=':
+		case '<':
+		case '>':
+		case '!':
+			return HerculesParser.BINOP5;
+		case '+':
+		case '-':
+			return HerculesParser.BINOP6;
+		default:
+			return HerculesParser.BINOP7;
+	}
 }
 
 {STRING} {
@@ -175,10 +157,6 @@ WHITESPACE = [\n\r\ \t\b\012]
 
 "return" {
 	return HerculesParser.RETURN;
-}
-
-"fun" {
-	return HerculesParser.FUN;
 }
 
 {NAME} {

@@ -2,13 +2,21 @@
 	import java.io.*;
 	import java.util.*;
 %}
-
-%token <sval> OP,DOUBLE,NAME,DIGIT,FUN,LITERAL
+%left RETURN '='
+%left NOT
+%right AND
+%right OR
+%left OP1
+%right OP2
+%left OP3
+%left OP4
+%left OP5
+%left OP6
+%left OP7
+%token <sval> LITERAL,BINOP7,BINOP6,BINOP5,BINOP4,BINOP3,BINOP2,BINOP1,NAME
 %token IF,ELSE,ELSEIF,WHILE,VAR
 %token RETURN,AND,OR,NOT
-%token EQUALS
-%token BINOP7,BINOP6,BINOP5,BINOP4,BINOP3,BINOP2,BINOP1
-
+%type <sval> op
 %%
 
 start
@@ -20,98 +28,217 @@ start
 program
 	:	program function
 	|	function
+	;	
+
+function 
+	: 	NAME '('
+		{	
+			varCount = 0;
+			varTable=new HashMap<String,Integer>();
+		} 
+		names ')'
+	 	{
+			emit("#\"" + $1 + "[f" + varCount + "]\" = "); 
+			emit("[");
+		}
+		'{'
+			decls 
+			exprs 
+		'}'
+		{
+			emit("(Return)");
+			emit("];");
+		}
 	;
 
 names 	
 	:	non_empty_names
 	|
-	;		
-
-function 
-	: 	NAME '(' {varCount = 0;varTable=new HashMap<String,Integer>();} 
-	names ')' {emit("#\"" + $1 + "[f" + varCount + "]\" = "); 
-	emit("["); }
-	'{'
-		decls 
-		exprs 
-	'}'
-	{emit("(Return)"); emit("];");}
 	;
 
 non_empty_names
-	:	NAME {addVar($1);}
-	|	NAME {addVar($1);} ',' non_empty_names
+	:	NAME {addVar($1);} ',' non_empty_names
+	|	NAME {addVar($1);}
 	;
 
 decls 
-	:	decl decls 
+	:	VAR non_empty_names ';' decls
 	| 
 	;
 
-decl
-	:	VAR non_empty_names ';'
-	;
-
 exprs
-	:	expr ';'  exprs 
-	|	expr ';'
+	:	expr ';' exprs 
+	|
 	;
 	
 expr
-	:	NAME '=' expr {emit("(Store " + findVar($1) + ")");} 
-	|	expr BINOP1 expr
-	|	expr BINOP2 expr
-	|	expr BINOP3 expr
-	|	expr BINOP4 expr
-	|	expr BINOP5 expr
-	|	expr BINOP6 expr
-	|	expr BINOP7 expr
-	|	expr BINAND expr
-	|	or_expr
+	:	NOT expr
+		{
+			emit("(Not)");
+		}
+	|	expr BINOP1
+		{
+			emit("(StoreArgAcc " + tmpPos-- +" 0)");
+		}
+		expr
+		{
+			emit("(StoreArgAcc " + ++tmpPos +" 1)");
+			emit("(Call #\"" + $2 + "[f2]\" " + tmpPos + " )" );
+		}
+	|	expr BINOP2
+		{
+			emit("(StoreArgAcc " + tmpPos-- +" 0)");
+		}
+		expr
+		{
+			emit("(StoreArgAcc " + ++tmpPos +" 1)");
+			emit("(Call #\"" + $2 + "[f2]\" " + tmpPos + " )" );
+		}
+	|	expr BINOP3
+		{
+			emit("(StoreArgAcc " + tmpPos-- +" 0)");
+		}
+		expr
+		{
+			emit("(StoreArgAcc " + ++tmpPos +" 1)");
+			emit("(Call #\"" + $2 + "[f2]\" " + tmpPos + " )" );
+		}
+	|	expr BINOP4
+		{
+			emit("(StoreArgAcc " + tmpPos-- +" 0)");
+		}
+		expr
+		{
+			emit("StoreArgAcc " + ++tmpPos +" 1)");
+			emit("Call #\"" + $2 + "[f2]\" " + tmpPos + " )" );
+		}
+	|	expr BINOP5
+		{
+			emit("(StoreArgAcc " + tmpPos-- +" 0)");
+		}
+		expr
+		{
+			emit("(StoreArgAcc " + ++tmpPos +" 1)");
+			emit("(Call #\"" + $2 + "[f2]\" " + tmpPos + " )" );
+		}
+	|	expr BINOP6
+		{
+			emit("(StoreArgAcc " + tmpPos-- +" 0)");
+		}
+		expr
+		{
+			emit("(StoreArgAcc " + ++tmpPos +" 1)");
+			emit("(Call #\"" + $2 + "[f2]\" " + tmpPos + " )" );
+		}
+	|	expr BINOP7
+		{
+			emit("(StoreArgAcc " + tmpPos-- +" 0)");
+		}
+		expr
+		{
+			emit("(StoreArgAcc " + ++tmpPos +" 1)");
+			emit("(Call #\"" + $2 + "[f2]\" " + tmpPos + " )" );
+		}
+	|	expr AND
+		{
+			int lab = newLabel();
+			emit("(GoFalse _" + lab + ")");
+		}
+		expr
+		{
+			int lab = pop();
+			emit("_" + lab + ":");
+		}
+	|	expr OR
+		{
+			int lab = newLabel();
+			emit("(GoTrue _" + lab + ")");
+		}
+		expr
+		{
+			int lab = pop();
+			emit("_" + lab + ":");
+		}
 	|	smallexpr
+	|	NAME '=' expr {emit("(Store " + findVar($1) + ")");} 
 	|	RETURN expr
+		{
+			emit("(Return)");
+		}
 	;
 
-or_expr 
-	:	or_expr OR and_expr 
-	|	and_expr
-	;
-
-and_expr 
-	:	and_expr AND not_expr
-	|	not_expr
-	;
-
-not_expr 
-	:	NOT not_expr 
-	|	op_expr
-	; 
-
-/*(Call #"+[f2]" - tmpPos);	Muna að incrementa og decrementa tmpPos*/
-op_expr 
-	:	op_expr OP {} small_expr {}
-	|	small_expr
-	;
-
-small_expr
-	:	op smallexpr /* einundaraðgerð */
-	|	WHILE expr body
-	|	IF expr {push(elseLab);push(endifLab); elseLab = newLabel(); endifLab = newLabel(); emit("(GoFalse _" + elseLab + ")");}
- 		body {emit("(Go _" + endifLab + ")" );} ifrest {emit("_" + endifLab +":"); endifLab = pop(); elseLab = pop(); }
-	|	LITERAL {emit("(MakeVal " + $1 + ")");}	
-	|	NAME {emit("(Fetch " + findVar($1) + ")");}
-	|	NAME '(' { push(argCount); argCount = 0;tmpPos--;  }  args ')'{ tmpPos++; emit("(Call #\"" + $1 + "[f" + argCount + "]\" " + tmpPos + ")"); argCount = pop(); } 
+smallexpr
+	:	op smallexpr
+		{
+			emit("(StoreArgAcc " + tmpPos + " 0)");
+			emit("(Call #\"" + $1 + "[f1]\" " + tmpPos + ")");
+		}
+	|	WHILE
+		{
+			int start = newLabel();
+			push(start);
+			emit("_" + start + ":");
+		}
+		expr
+		{
+			int end = newLabel();
+			emit("(GoFalse _" + end + ")" );
+		}
+		body
+		{
+			int end = pop();
+			int start = pop();
+			emit("(Go _" + start + ")");
+		}
+	|	IF expr
+	 	{
+			push(elseLab);
+			push(endifLab);
+			elseLab = newLabel();
+			endifLab = newLabel();
+			emit("(GoFalse _" + elseLab + ")");
+		}
+ 		body
+ 		{
+			emit("(Go _" + endifLab + ")" );
+		}
+		ifrest
+		{
+			emit("_" + endifLab +":");
+			endifLab = pop(); 
+			elseLab = pop();
+		}
+	|	LITERAL
+	 	{
+			emit("(MakeVal " + $1 + ")");
+		}	
+	|	NAME
+		{
+			emit("(Fetch " + findVar($1) + ")");
+		}
+	|	NAME '('
+		{
+			push(argCount);
+			argCount = 0;
+			tmpPos--;
+		} 
+		args ')'
+		{
+			tmpPos++;
+			emit("(Call #\"" + $1 + "[f" + argCount + "]\" " + tmpPos + ")");
+			argCount = pop();
+		} 
 	|	'(' expr ')'
 	;
 
 op
-	: BINOP1
-	| BINOP2
-	| BINOP3
-	| BINOP4
-	| BINOP5
-	| BINOP6
-	| BINOP7
+	: OP1
+	| OP2
+	| OP3
+	| OP4
+	| OP5
+	| OP6
+	| OP7
 	;
 
 body 
@@ -119,18 +246,40 @@ body
 
 
 ifrest 
-	: ELSEIF {emit("_" + elseLab + ":" );} expr {elseLab = newLabel(); emit("(GoFalse _" + elseLab + ")");} body {emit("(Go _" + endifLab + ")" );} ifrest 
-	| ELSE {emit("_" + elseLab + ":" );} body  
-	| {emit("_" + elseLab + ":" );}
+	:	ELSEIF
+	  	{
+			emit("_" + elseLab + ":" );
+		}
+		expr
+		{
+			elseLab = newLabel();
+			emit("(GoFalse _" + elseLab + ")");
+		}
+		body 
+		{
+			emit("(Go _" + endifLab + ")" );
+		}
+		ifrest 
+	| 	ELSE
+		{
+			emit("_" + elseLab + ":" );
+		}
+		body  
+	| 	{emit("_" + elseLab + ":" );}
 	;
 
 args : non_empty_args 
 	|  
 	;
 
-non_empty_args : arg ',' non_empty_args | arg ;
+non_empty_args : arg ',' non_empty_args
+ 	| arg ;
 
-arg : expr {emit("(StoreArgAcc " + (tmpPos+1) + " " + argCount + ")"); argCount++; }
+arg : 	expr
+		{
+			emit("(StoreArgAcc " + (tmpPos+1) + " " + argCount + ")");
+			argCount++;
+		}
 	;
 
 
